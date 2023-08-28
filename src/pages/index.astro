@@ -1,0 +1,58 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { client } from "../contentful/client";
+import type {
+  TypeCitation,
+  TypeCitationSkeleton,
+  TypeHomepageSkeleton,
+} from "../contentful/types";
+import type { Entry, Asset } from "contentful";
+
+type Citation = {
+  text: string;
+  name: string;
+  city: string;
+};
+
+export let citations: Citation[] = [];
+export let coverUrl: string | undefined;
+
+try {
+  const data = await client.getEntries<TypeHomepageSkeleton>({
+    content_type: "homepage",
+  });
+
+  const home = data.items[0];
+
+  // cover
+  const cover = home.fields.cover as Asset;
+  coverUrl = cover.fields.file?.url;
+
+  // citations
+  const citationEntries = home.fields
+    .citations as Entry<TypeCitationSkeleton>[];
+  citations = citationEntries.map((citationEntry) => {
+    const citation = citationEntry.fields as Citation;
+    return {
+      text: citation.text,
+      name: citation.name,
+      city: citation.city,
+    };
+  });
+} catch (error) {
+  console.log(error);
+}
+---
+
+<Layout title="Contentful">
+  <img src={coverUrl} alt="cover" />
+  <ul>
+    {
+      citations.map((citation) => (
+        <li>
+          {citation.text} - {citation.name}, {citation.city}
+        </li>
+      ))
+    }
+  </ul>
+</Layout>
